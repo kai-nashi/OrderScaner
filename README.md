@@ -1,3 +1,8 @@
+# Usage
+python 3.5
+pyinstaller 3.1.1
+PyQt4
+
 # OrderScaner
 Eve online. Scan orders and alarm if it should be changed
 compiled to exe by pyinstaller
