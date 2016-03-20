@@ -1,6 +1,6 @@
 # Usage
-- python 3.5
-- pyinstaller 3.1.1
+- Python 3.5
+- Pyinstaller 3.1.1
 - PyQt4
 
 # OrderScaner
