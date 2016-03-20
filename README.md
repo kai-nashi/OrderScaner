@@ -11,3 +11,4 @@ Python is my first programming language with so success, before i played with ea
 
 # Future
 - settings for alarm, select count of items that can be in orders better than your
+- choose scan only station price or region
