@@ -1,2 +1,0 @@
-python OrderScaner.py
-pause
