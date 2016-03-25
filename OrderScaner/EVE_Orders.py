@@ -74,6 +74,7 @@ class newOrder:
 
             # orderDate and last check date
         self.date = 0
+        self.dateLoad = 0
         self.checkDate = 0
         
             # escrow
@@ -229,11 +230,12 @@ class ordersLoader_FromAPI(threading.Thread):
 
 class ordersScaner_Row(threading.Thread):
     
-    def __init__(self, orders=[], row=0):
+    def __init__(self, orders=[], row=0, myOrders = None):
         
         super(ordersScaner_Row, self).__init__()
         
             # VARS
+        self.myOrders = myOrders
         self.orders = orders
         self.row = row
         
@@ -243,8 +245,8 @@ class ordersScaner_Row(threading.Thread):
             order = self.orders[self.row]
             
             if order.scan:
-                CrestMarket.order_update(order)
                 self.orders_UpdateCheckDate(order)
+                CrestMarket.order_update(order, self.myOrders)
         
     def orders_UpdateCheckDate(self, order):
             
@@ -349,8 +351,10 @@ def orders_LoadFromFile(path, charID, bid = None):
                 date = orderString[13]                                          
                 date = time.strptime(date, "%Y-%m-%d %H:%M:%S.000")
                 date = time.mktime(date)
-                order.date = date
                 
+                order.date = date
+                order.dateLoad = date
+
                     # last check (0 = never)
                 order.checkDate = 0
         
@@ -463,6 +467,7 @@ def orders_LoadFromAPI(key, vc, charID, orderType = None):
             # read string -> convert to year = x; month = x; ... ;
             # and convert it to seconds
         order.date = date
+        order.dateLoad = date
                 
                 # last check (0 = never)
         order.checkDate = checkDate

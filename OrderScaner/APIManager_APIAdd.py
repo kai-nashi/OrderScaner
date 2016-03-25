@@ -19,7 +19,7 @@ class Window_APIAdd(QtGui.QDialog):
         
             # WINDOW SETTING
         super(Window_APIAdd, self).__init__()
-        uic.loadUi(os.getcwd()+'/forms/APIManager_APIAdd.ui', self)
+        uic.loadUi('forms/APIManager_APIAdd.ui', self)
         self.setWindowModality(Qt.ApplicationModal)
         self.setWindowTitle('Add API')
         self.setFixedSize(self.width(),self.height())

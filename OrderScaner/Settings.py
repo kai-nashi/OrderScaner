@@ -19,7 +19,7 @@ class Window_Settings(QtGui.QDialog):
         
             # INIT SUPER CLASS AND SHOW WINDOW
         super(Window_Settings, self).__init__()
-        uic.loadUi(os.getcwd()+'/forms/Settings.ui', self)
+        uic.loadUi('forms/Settings.ui', self)
         self.show()
         
             # VARS

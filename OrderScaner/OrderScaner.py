@@ -24,7 +24,7 @@ import APIManager
 import CharManager
 import Settings
 
-VERSION = '0.1.4'
+VERSION = '0.1.5'
 
 #==============================================================================
 # Table line
@@ -143,8 +143,13 @@ class tableLine(object):
             self.data[4].setText(time.strftime("%H:%M:%S", date)) 
             
             # attension,alarm Icons and set to it icons
-        self.setAttension(order.attension)
-        self.setAlarm(order.alarm)
+        if order.top():
+            self.setAttension(0)
+            self.setAlarm(0)
+
+        else:
+            self.setAttension(order.attension)
+            self.setAlarm(order.alarm)
 
             # scanEnabled and scanMode list
         self.setScan(order.scan)
@@ -236,16 +241,14 @@ class tableLine(object):
 
 class trayMassanger(object):
     
-    def __init__(self, workDir):
+    def __init__(self):
         
         super(trayMassanger, self).__init__()
-        
-        self.dir =  workDir
         
             # tray settings
         self.tray = QtGui.QSystemTrayIcon()
         
-        self.tray.setIcon(QtGui.QIcon( self.dir+'/images/icon.PNG') )
+        self.tray.setIcon(QtGui.QIcon('images/icon.PNG') )
         self.tray.show()
         
     def showMessage_fromOrders(self, ordersAlarm):
@@ -257,15 +260,18 @@ class trayMassanger(object):
             # for all orders need to alarm
         for order in ordersAlarm:
             
-                # create message
-            message = order.itemName
-            message = message + ' [' + order.solarSystemName + ']'
+                # if order is not to delete
+            if order.exist:
+                
+                    # create message
+                message = order.itemName
+                message = message + ' [' + order.solarSystemName + ']'
             
-                # sort message
-            if order.bid == 0:
-                sellOrdersMessage.append(message)
-            else:
-                buyOrdersMessage.append(message)
+                    # sort message
+                if order.bid == 0:
+                    sellOrdersMessage.append(message)
+                else:
+                    buyOrdersMessage.append(message)
 
             # if message was not empty
         if len(sellOrdersMessage) or len(buyOrdersMessage):
@@ -310,15 +316,13 @@ class trayMassanger(object):
 
 class OrderScaner(QtGui.QMainWindow):
     
-    def __init__(self, workDir):
+    def __init__(self):
         
             # INIT SUPER CLASS AND SHOW WINDOW
         super(OrderScaner, self).__init__()
         
-        self.dir = workDir
-        
             # widnow settings
-        uic.loadUi( self.dir + '/forms/Main.ui', self)
+        uic.loadUi('forms/Main.ui', self)
         self.show()
         
             # MAIN VARS
@@ -336,7 +340,7 @@ class OrderScaner(QtGui.QMainWindow):
         
             # TRAY
         # create tray messanger
-        self.trayMessanger = trayMassanger(self.dir)
+        self.trayMessanger = trayMassanger()
         
         # timers for messanger
         self.trayMessangerTimer = QtCore.QTimer()
@@ -344,7 +348,8 @@ class OrderScaner(QtGui.QMainWindow):
         self.trayMessangerTimer.start(self.alarmTime)
         
         self.chars = []
-
+        self.myOrders = []        
+        
             #   ORDERS
         # flag for scaning by row
         self.scanByRow = False  
@@ -608,7 +613,10 @@ class OrderScaner(QtGui.QMainWindow):
                 # update items
             self.tableOrders_updateItems(self.Table_OrdersSell)
             self.tableOrders_updateItems(self.Table_OrdersBuy)
-            
+
+                # update chars orders id
+            self.myOrders_update()        
+
     def chars_update(self):
         
             # debug
@@ -693,6 +701,16 @@ class OrderScaner(QtGui.QMainWindow):
             self.BTN_LoadFile.setEnabled(False)
             self.BTN_ScanStart.setEnabled(False)
             self.BTN_ScanStop.setEnabled(False)
+            
+    def myOrders_update(self):
+        
+        self.myOrders = []
+        
+        for order in self.Table_OrdersSell.orders:
+            self.myOrders.append(order.id)
+            
+        for order in self.Table_OrdersBuy.orders:
+            self.myOrders.append(order.id)
                 
     def tableOrders_init(self, table):
         
@@ -767,13 +785,13 @@ class OrderScaner(QtGui.QMainWindow):
 
         
                     # load attension icons
-        table.attensionIcon = [QIcon(self.dir+'/images/good.PNG'),
-                               QIcon(self.dir+'/images/bad.PNG'),
-                               QIcon(self.dir+'/images/wait.PNG')]
+        table.attensionIcon = [QIcon('images/good.PNG'),
+                               QIcon('images/bad.PNG'),
+                               QIcon('images/wait.PNG')]
         
             # load message icons
-        table.alarmIcon = [QIcon(self.dir+'/images/messageOff.PNG'),
-                           QIcon(self.dir+'/images/messageOn.PNG')]
+        table.alarmIcon = [QIcon('images/messageOff.PNG'),
+                           QIcon('images/messageOn.PNG')]
         
         self.tableOrders_setColumns(table)
         
@@ -829,8 +847,6 @@ class OrderScaner(QtGui.QMainWindow):
             # clear old data
         table.clearContents()
         
-        #self.tableOrders_setColumns(table)
-        
             # set flag updated and update rows count
         table.updated = 1
         
@@ -883,7 +899,7 @@ class OrderScaner(QtGui.QMainWindow):
                 
                     # set scar Row, scaner and start scan
                     table.scanRow = 0
-                    table.scaner = EVE_Orders.ordersScaner_Row(table.orders, table.scanRow)
+                    table.scaner = EVE_Orders.ordersScaner_Row(table.orders, table.scanRow, self.myOrders)
                     table.scaner.start()
                 
                     # if orders wasn't update then modify row
@@ -894,7 +910,7 @@ class OrderScaner(QtGui.QMainWindow):
         else:
             
                 # create and start it
-            table.scaner = EVE_Orders.ordersScaner_Row(table.orders, table.scanRow)
+            table.scaner = EVE_Orders.ordersScaner_Row(table.orders, table.scanRow, self.myOrders)
             table.scaner.start()
                 
     def tableOrders_updateRow(self, table):
@@ -907,27 +923,31 @@ class OrderScaner(QtGui.QMainWindow):
             # update order info
         line.update()
         
-            # if order havn't alarmed yet
-        if not order.alarm and order.scan:
-            if order.modifiable() and not order.top() and self.alarmOn:
-                
-                # set alarm for order and send it to tray messanger
-                line.setAlarm(1)
-                self.ordersForAlarm.append(order)
-                
             # if order is not find when it has been scaned
         if order.exist == 0:
             
                 # remove order from orders
+                # update myOrders
+            table.orders.remove(order)
+            self.myOrders_update()          
+            
                 # update items (at script for items restruct lines)
                 # row - 1 (because next row now is current)
-            table.orders.remove(order)
             self.tableOrders_updateItems(table)
             row = row - 1
             
-            self.trayMessanger.showMessage('Orders is fullfild',
-                                           order.itemName +
-                                           ' [' + order.solarSystemName + ']')
+            if self.alarmOn:
+                self.trayMessanger.showMessage('Orders is fullfild',
+                                               order.itemName +
+                                               ' [' + order.solarSystemName + ']')
+        else:
+                # if order havn't alarmed yet
+            if not order.alarm and order.scan:
+                if order.modifiable() and not order.top() and self.alarmOn:
+                
+                    # set alarm for order and send it to tray messanger
+                    line.setAlarm(1)
+                    self.ordersForAlarm.append(order)
         
             # go to next row
         table.scanRow = row + 1
@@ -936,7 +956,7 @@ class OrderScaner(QtGui.QMainWindow):
         if table.scanRow < len(table.orders):
 
                 # create new scaner and start it
-            table.scaner = EVE_Orders.ordersScaner_Row(table.orders, table.scanRow)
+            table.scaner = EVE_Orders.ordersScaner_Row(table.orders, table.scanRow, self.myOrders)
             table.scaner.start()
 
             # if out of range
@@ -948,7 +968,7 @@ class OrderScaner(QtGui.QMainWindow):
                 table.scanRow = 0
                 
                     # and create new scaner
-                table.scaner = EVE_Orders.ordersScaner_Row(table.orders, table.scanRow)
+                table.scaner = EVE_Orders.ordersScaner_Row(table.orders, table.scanRow, self.myOrders)
                 table.scaner.start()
         
     def settings_load(self):
@@ -1002,14 +1022,10 @@ if __name__ == '__main__':
     
     app = QtGui.QApplication(sys.argv)
     
-    workDir = os.getcwd()
-    workDir = workDir.replace('\\','/')
-    print( workDir )
-    
-    window = OrderScaner(workDir)
+    window = OrderScaner()
 
     app.setActiveWindow(window)
-    app.setWindowIcon(QtGui.QIcon(workDir+'/images/icon.PNG'))
+    app.setWindowIcon(QtGui.QIcon('images/icon.PNG'))
     
     sys.exit(app.exec_())
 

@@ -25,7 +25,7 @@ class Window_APIManager(QtGui.QDialog):
         
             # WINDOW SETTING
         super(Window_APIManager, self).__init__()
-        uic.loadUi(os.getcwd()+'/forms/APIManager.ui', self)
+        uic.loadUi('forms/APIManager.ui', self)
         self.setWindowModality(Qt.ApplicationModal)
         self.setWindowTitle('API Manager')
         self.setFixedSize(self.width(),self.height())
