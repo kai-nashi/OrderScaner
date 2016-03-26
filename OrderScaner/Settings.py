@@ -26,6 +26,7 @@ class Window_Settings(QtGui.QDialog):
         self.path = ''
         self.alarmOn = 1
         self.alarmTime = 10000
+        self.alarmWithSound = 1
         self.loopScan = 1
         
         self.widgets = []
@@ -48,9 +49,10 @@ class Window_Settings(QtGui.QDialog):
         self.LE_Path.editingFinished.connect( self.settings_update )
         
         self.CB_AlarmEnable.stateChanged.connect( self.settings_update )
-        self.CB_LoopScan.stateChanged.connect( self.settings_update )
-        
+        self.CB_AlarmWithSound.stateChanged.connect( self.settings_update )
         self.SB_AlarmTime.valueChanged.connect( self.settings_update )
+        
+        self.CB_LoopScan.stateChanged.connect( self.settings_update )
         
             # BTNS
         
@@ -89,8 +91,12 @@ class Window_Settings(QtGui.QDialog):
             # read settings
         
         self.path = config['MAIN']['marketlogs']
+        
         self.alarmOn = int( config['MAIN']['alarmEnable'] )
+        
+        self.alarmWithSound = int( config['MAIN']['alarmWithSound'] )
         self.alarmTime = int( config['MAIN']['alarmTime'] )
+        
         self.loopScan = int( config['MAIN']['loopScan'] )
         
             # check alarm timmer
@@ -125,15 +131,17 @@ class Window_Settings(QtGui.QDialog):
         
         alarmEnable = self.alarmOn
         loopScan = self.loopScan
+        alarmWithSound = self.alarmWithSound
         
         alarmTime = self.alarmTime/1000
         
         self.LE_Path.setText( path )
         
         self.CB_AlarmEnable.setChecked( alarmEnable )
-        self.CB_LoopScan.setChecked( loopScan )
-        
+        self.CB_AlarmWithSound.setChecked( alarmWithSound )
         self.SB_AlarmTime.setValue( alarmTime )
+        
+        self.CB_LoopScan.setChecked( loopScan )
         
     def settings_newPath(self):
         
@@ -149,15 +157,19 @@ class Window_Settings(QtGui.QDialog):
         self.path = self.LE_Path.text()
         
         self.alarmOn = int (self.CB_AlarmEnable.isChecked() )
+        self.alarmWithSound = int (self.CB_AlarmWithSound.isChecked() )
+        self.alarmTime = self.SB_AlarmTime.value() * 1000
+        
         self.loopScan = int( self.CB_LoopScan.isChecked() )
         
-        self.alarmTime = self.SB_AlarmTime.value() * 1000
+
         
     def settings_default(self):
         
         self.path = ''
         self.alarmOn = 1
         self.alarmTime = 10000
+        self.alarmwithSound = 1
         self.loopScan = 1
         
         self._UpdateWindow()
@@ -168,9 +180,10 @@ class Window_Settings(QtGui.QDialog):
         print('Path:', self.path)
         
         print('Alarm On:', self.alarmOn)
-        print('Loop scan:', self.loopScan)
-        
+        print('Alarm with sound:', self.alarmWithSound)
         print('AlarmTime:', self.alarmTime)
+        
+        print('Loop scan:', self.loopScan)
         
         print('Table:', self.TableSettings_enabled)
         
@@ -180,11 +193,15 @@ class Window_Settings(QtGui.QDialog):
         
             # set settings
         config.set('MAIN','marketlogs', self.path)
-
+        
         config.set('MAIN','alarmEnable', str(self.alarmOn) )
+        config.set('MAIN','alarmWithSound', str(self.alarmWithSound) )
+        config.set('MAIN','alarmTime', str(self.alarmTime) )
+        
         config.set('MAIN','loopScan', str(self.loopScan) ) 
 
-        config.set('MAIN','alarmTime', str(self.alarmTime) )
+        
+        
             
             # save table settings
             

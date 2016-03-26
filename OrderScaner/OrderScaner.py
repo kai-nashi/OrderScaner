@@ -24,7 +24,7 @@ import APIManager
 import CharManager
 import Settings
 
-VERSION = '0.1.5'
+VERSION = '0.1.7'
 
 #==============================================================================
 # Table line
@@ -39,7 +39,7 @@ class tableLine(object):
         
             # links to order of lines and mother table
         self.order = order
-        self.table = table
+        self.table = table   
         
             # create widgets with data from order
         self.createData()
@@ -143,13 +143,8 @@ class tableLine(object):
             self.data[4].setText(time.strftime("%H:%M:%S", date)) 
             
             # attension,alarm Icons and set to it icons
-        if order.top():
-            self.setAttension(0)
-            self.setAlarm(0)
-
-        else:
-            self.setAttension(order.attension)
-            self.setAlarm(order.alarm)
+        self.setAttension(order.attension)
+        self.setAlarm(order.alarm)
 
             # scanEnabled and scanMode list
         self.setScan(order.scan)
@@ -235,6 +230,7 @@ class tableLine(object):
         item = self.data[self.table.alarm]
         item.setIcon(self.table.alarmIcon[value])
 
+
 #==============================================================================
 # Tray messanger
 #==============================================================================
@@ -245,11 +241,47 @@ class trayMassanger(object):
         
         super(trayMassanger, self).__init__()
         
+        self.scaning = 0
+        self.icon = QtGui.QIcon('images/icon.PNG')
+        self.iconScaning = QtGui.QMovie("images/iconScaning.GIF")
+        self.iconScaning.frameChanged.connect(self.iconUpdate)
+        
+            # alarm settings
+        self.alarmWithSound = 1
+        self.alarmWAV = QSound("sounds/alarm2.WAV")
+        
             # tray settings
         self.tray = QtGui.QSystemTrayIcon()
         
-        self.tray.setIcon(QtGui.QIcon('images/icon.PNG') )
+        self.tray.setIcon(self.icon)
         self.tray.show()
+        
+        print(self.iconScaning.isValid())
+        
+    def setScaning(self, scaning):
+        
+        self.scaning = scaning
+
+        
+        if self.scaning:
+            self.iconScaning.start()
+            self.iconScaning.jumpToFrame(0)
+            icon = QtGui.QIcon()
+            icon.addPixmap(self.iconScaning.currentPixmap())
+            self.tray.setIcon(icon)
+        else:
+            self.iconScaning.stop()
+            self.tray.setIcon(self.icon)
+        
+    def iconUpdate(self):
+        
+        if self.scaning:
+            icon = QtGui.QIcon()
+            icon.addPixmap(self.iconScaning.currentPixmap())
+            self.tray.setIcon(icon)
+        else:
+            self.iconScaning.stop()
+            self.tray.setIcon(self.icon)
         
     def showMessage_fromOrders(self, ordersAlarm):
 
@@ -302,6 +334,10 @@ class trayMassanger(object):
                 for line in buyOrdersMessage:
                     message = message + line + '\n'
                 
+                # alarmSound
+            if self.alarmWithSound:
+                self.alarmWAV.play()
+                
                 # show message
             self.showMessage('Time to 0.1 war',message)
         
@@ -329,11 +365,14 @@ class OrderScaner(QtGui.QMainWindow):
         self.path = ''
         self.alarmOn = 1
         self.alarmTime = 10000
+        self.alarmWithSound = 1
         self.loopScan = 1
         
         self.Window_APIManager = None
         self.Window_CharManager = None
         self.Window_Settings = None
+        
+        self.fulfilledWAV = QSound("sounds/fulfilled.WAV")
         
             # orders to alarm
         self.ordersForAlarm = []
@@ -527,6 +566,8 @@ class OrderScaner(QtGui.QMainWindow):
         
         print('Scan starting...')        
         
+        self.trayMessanger.setScaning(1)
+        
         self.BTN_ScanStart.setEnabled(False)
         self.BTN_ScanStop.setEnabled(True)
         
@@ -540,6 +581,8 @@ class OrderScaner(QtGui.QMainWindow):
     def scan_stop(self):
         
         print('Scan stoping...')
+        
+        self.trayMessanger.setScaning(0)
         
         self.BTN_ScanStart.setEnabled(True)
         self.BTN_ScanStop.setEnabled(False)
@@ -936,8 +979,15 @@ class OrderScaner(QtGui.QMainWindow):
             self.tableOrders_updateItems(table)
             row = row - 1
             
+                # if alarm enable
             if self.alarmOn:
-                self.trayMessanger.showMessage('Orders is fullfild',
+                
+                    # sound message about fulfilled
+                if self.alarmWithSound:
+                    self.fulfilledWAV.play()
+                    
+                    # tray message
+                self.trayMessanger.showMessage('Orders is fulfilled',
                                                order.itemName +
                                                ' [' + order.solarSystemName + ']')
         else:
@@ -992,6 +1042,15 @@ class OrderScaner(QtGui.QMainWindow):
         
             # set alarm timer new time
         self.trayMessangerTimer.start(self.alarmTime)
+        
+            # sound Alarm
+        self.alarmWithSound = int( config['MAIN']['alarmWithSound'] )
+        
+            # alarm sounds settings for tray
+        if self.alarmOn:
+            self.trayMessanger.alarmWithSound = self.alarmWithSound
+        else:
+            self.trayMessanger.alarmWithSound = 0
         
             # Table settings
     
