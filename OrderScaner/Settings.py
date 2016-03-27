@@ -82,7 +82,19 @@ class Window_Settings(QtGui.QDialog):
 
     def settings_load(self):
         
+            # debug
         print('Load settings')
+        
+            # get dir
+        workDir = os.getcwd()
+        workDir = workDir.replace('\\','/')
+        
+            # get files in dir
+        files = os.listdir(workDir)
+        
+            # if config is not found
+        if 'config.ini' not in files:
+            self.settings_createINI()
         
             # read config
         config = configparser.ConfigParser()
@@ -162,8 +174,6 @@ class Window_Settings(QtGui.QDialog):
         
         self.loopScan = int( self.CB_LoopScan.isChecked() )
         
-
-        
     def settings_default(self):
         
         self.path = ''
@@ -173,6 +183,37 @@ class Window_Settings(QtGui.QDialog):
         self.loopScan = 1
         
         self._UpdateWindow()
+        
+    def settings_createINI(self):
+        
+            # create empty config
+        open('config.ini','w').close()
+        
+            # read new file
+        config = configparser.ConfigParser()
+        config.read('config.ini')
+        
+            # clear it
+        config.clear()
+        
+            # add MAIN default settings
+        config.add_section('MAIN')
+        config.set('MAIN','marketlogs','')
+        config.set('MAIN','alarmenable','1')
+        config.set('MAIN','alarmtime','30000')
+        config.set('MAIN','alarmwithsound','1')
+        config.set('MAIN','loopscan','1')
+        config.set('MAIN','tablesettings','0,1,2,3,4,5,6,7,8,9,10,11')
+        
+            # add KEYS default settings
+        config.add_section('KEYS')
+        config.set('KEYS','name','')
+        config.set('KEYS','key','')
+        config.set('KEYS','vc','')
+        
+            # save config
+        with open('config.ini', 'w') as configfile:
+            config.write(configfile)
         
     def settings_save(self):
         
@@ -200,9 +241,6 @@ class Window_Settings(QtGui.QDialog):
         
         config.set('MAIN','loopScan', str(self.loopScan) ) 
 
-        
-        
-            
             # save table settings
             
         # sell

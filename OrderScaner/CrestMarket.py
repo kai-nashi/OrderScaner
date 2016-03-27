@@ -11,13 +11,25 @@ import time
 
 def order_update(order, myOrders):
 
+        # load all orders for itemID from crest
+    data = item_Load(order.itemID, order.bid, order.regionID)
+    
+    if data != order.data and data!= order.dataLast:
+        
+        order.dataLast = order.data
+        order.data = data
+        
+        order_updateOrder(order, myOrders)
+        
+        
+def order_updateOrder(order, myOrders):
+    
+    data = order.data
+    
         # if order was checked and date check (eve time) more then 6 min from dateload
         # flag order to delete (5 min is crest api cache time + 1 min for any lags)
     if order.checkDate and order.dateLoad + 360 < order.checkDate:
         order.exist = 0
-
-        # load all orders for itemID from crest
-    data = item_Load( order.itemID, order.bid )
     
         # prices
     prices = []
@@ -98,36 +110,23 @@ def order_update(order, myOrders):
     else:
         order.marketPrice = 0
 
-def item_GetPrice(itemID,bid,stationID = None):
+def item_GetPrice(itemID, stationID = None):
 
-    data = item_Load(itemID,bid)
-
-    prices = []
-
-    i = 0
+    newData = item_Load(order.itemID, order.bid, order.regionID)
     
-    while i<int(data["totalCount_str"]):
+    if newData != order.data and newData != order.dataLast:    
+    
+        order.dataLast = order.data
+        order.data = newData
         
-        if stationID == None:
-            prices.append(float(data["items"][i]["price"]))
-        else:
-            if int(data["items"][i]["location"]["id"]) == stationID:
-                prices.append(float(data["items"][i]["price"]))
-        i=i+1
-
-    if bid:
-        return max(prices)
-    else:
-        return min(prices)
-        
-def item_Load(itemID,bid):
+def item_Load(itemID, bid, region):
 
     if bid:
         orderType = 'buy'
     else:
         orderType = 'sell'
     
-    url = "https://public-crest.eveonline.com/market/10000002/orders/"+orderType+"/?type=https://public-crest.eveonline.com/types/"+str(itemID)+"/"
+    url = "https://public-crest.eveonline.com/market/"+str(region)+"/orders/"+orderType+"/?type=https://public-crest.eveonline.com/types/"+str(itemID)+"/"
     
     data_file = request.urlopen(url).read().decode('utf-8')
     #request.urlretrieve(url, "D:/result.json")
@@ -136,11 +135,7 @@ def item_Load(itemID,bid):
     data = json.loads(data_file)
     
     return data
-    
-#a = item_GetPrice(11577,0,60003760)
-#print(a)
-    
-"""
+
 if __name__ == '__main__':
     
     import EVE_Orders
@@ -153,4 +148,3 @@ if __name__ == '__main__':
     order_update(order)
 
     print(order.remaining, order.marketPrice)
-"""

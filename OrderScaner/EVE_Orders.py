@@ -25,6 +25,10 @@ class newOrder:
         
         super(newOrder, self).__init__()        
         
+            # json files
+        self.data = None
+        self.dataLast = None
+        
             # flag for update, if 0 - order wasn't find when update
             # that mean that order canceled or fullfid
         self.exist = 1
@@ -267,6 +271,9 @@ class ordersScaner_Row(threading.Thread):
    
 def orders_LoadFromFile(path, charID, bid = None):
     
+        # empty list of orders
+    orders = []    
+    
         # get list of file
     files = os.listdir(path)
     
@@ -276,102 +283,99 @@ def orders_LoadFromFile(path, charID, bid = None):
     for file in files:
         if file.startswith('My Orders'):
             filesOrder.append(file)
+
+    if filesOrder != []:            
             
-        # get date of them
-    filesOrder_Date = []
+            # get date of them
+        filesOrder_Date = []
     
-    for file in filesOrder:
-        filesOrder_Date.append(os.path.getmtime(path+file))
+        for file in filesOrder:
+            filesOrder_Date.append(os.path.getmtime(path+file))
         
-        # find oldest and open it
-    needFile_Index = filesOrder_Date.index(max(filesOrder_Date))
-    file = open(path+filesOrder[needFile_Index], 'r')
+            # find oldest and open it
+        needFile_Index = filesOrder_Date.index(max(filesOrder_Date))
+        file = open(path+filesOrder[needFile_Index], 'r')  
     
-        # create orders list from this
-    orders = []      
-    
-    for line in file:
+        for line in file:
         
-        if not line.startswith('orderID'):
+            if not line.startswith('orderID'):
 
-                # do str readable
-            orderString = line.split(',')
-
-            #orderOld = []
+                    # do str readable
+                orderString = line.split(',')
                 
-                # if read order of char
-            if charID == orderString[2]:
+                    # if read order of char
+                if charID == orderString[2]:
                 
-                    # create new orders
-                order = newOrder()
+                        # create new orders
+                    order = newOrder()
                 
-                    # id
-                order.id = int(orderString[0])
+                        # id
+                    order.id = int(orderString[0])
                 
-                    # bid
-                if orderString[9] == 'True':
-                    order.bid = 1
-                else:
-                    order.bid = 0 
+                        # bid
+                    if orderString[9] == 'True':
+                        order.bid = 1
+                    else:
+                        order.bid = 0 
         
-                    # itemId and itemName
-                order.itemID = int(orderString[1])
-                order.itemName = 'ERROR'
+                        # itemId and itemName
+                    order.itemID = int(orderString[1])
+                    order.itemName = 'ERROR'
         
-                    # charID and charName
-                order.charID = int(orderString[2])
-                order.charName = orderString[3]     
+                        # charID and charName
+                    order.charID = int(orderString[2])
+                    order.charName = orderString[3]     
         
-                    # remaining/entered
-                order.entered = int(orderString[11])
-                order.remaining = int(float(orderString[12]))
+                        # remaining/entered
+                    order.entered = int(orderString[11])
+                    order.remaining = int(float(orderString[12]))
         
-                    # price and alarm (shoed tray message or no)
-                order.price = float(orderString[10])
-                order.alarm = 0
+                        # price and alarm (shoed tray message or no)
+                    order.price = float(orderString[10])
+                    order.alarm = 0
             
-                    # order range (32767  = solarSystem)
-                order.range = 32767
+                        # order range (32767  = solarSystem)
+                    order.range = 32767
                 
-                    # stationID and Name
-                order.stationID = int(orderString[6])
-                order.stationName = orderString[7]
+                        # stationID and Name
+                    order.stationID = int(orderString[6])
+                    order.stationName = orderString[7]
         
-                    # solarSystemID and Name
-                order.solarSystemID = int(orderString[19])
-                order.solarSystemName = orderString[20]
+                        # solarSystemID and Name
+                    order.solarSystemID = int(orderString[19])
+                    order.solarSystemName = orderString[20]
                 
-                    # regionID and Name
-                order.regionID = int(orderString[4])
-                order.regionName = orderString[5]
+                        # regionID and Name
+                    order.regionID = int(orderString[4])
+                    order.regionName = orderString[5]
 
-                    # get date of order
-                    # read string -> convert to year = x; month = x; ... ;
-                    # and convert it to seconds
-                date = orderString[13]                                          
-                date = time.strptime(date, "%Y-%m-%d %H:%M:%S.000")
-                date = time.mktime(date)
+                        # get date of order
+                        # read string -> convert to year = x; month = x; ... ;
+                        # and convert it to seconds
+                    date = orderString[13]                                          
+                    date = time.strptime(date, "%Y-%m-%d %H:%M:%S.000")
+                    date = time.mktime(date)
                 
-                order.date = date
-                order.dateLoad = date
+                    order.date = date
+                    order.dateLoad = date
 
-                    # last check (0 = never)
-                order.checkDate = 0
+                        # last check (0 = never)
+                    order.checkDate = 0
         
-                    # escrow for buy orders
-                order.escrow = 0
+                        # escrow for buy orders
+                    order.escrow = 0
                 
-                    # update itemName
-                order.updateItemName()
+                        # update itemName
+                    order.updateItemName()
                 
-                    # add order to orders
-                if bid != None:                                                
-                    if bid == order.bid:                                      
-                        orders.append(order)                                 
-                else:                                                           
-                    orders.append(order) 
+                        # add order to orders
+                    if bid != None:                                                
+                        if bid == order.bid:                                      
+                            orders.append(order)                                 
+                    else:                                                           
+                        orders.append(order) 
 
-    orders = orders_UpdateItemName(orders)
+    #orders = orders_UpdateItemName(orders)
     
     print(orders)
     return orders

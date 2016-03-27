@@ -24,7 +24,7 @@ import APIManager
 import CharManager
 import Settings
 
-VERSION = '0.1.7'
+VERSION = '0.1.8'
 
 #==============================================================================
 # Table line
@@ -142,9 +142,12 @@ class tableLine(object):
             date = time.localtime(date)
             self.data[4].setText(time.strftime("%H:%M:%S", date)) 
             
-            # attension,alarm Icons and set to it icons
-        self.setAttension(order.attension)
-        self.setAlarm(order.alarm)
+            # update icons (need for situation, when order is not top)
+        item = self.data[self.table.attension]
+        item.setIcon(self.table.attensionIcon[order.attension])
+        
+        item = self.data[self.table.alarm]
+        item.setIcon(self.table.alarmIcon[order.alarm])
 
             # scanEnabled and scanMode list
         self.setScan(order.scan)
@@ -215,8 +218,8 @@ class tableLine(object):
         """
         
         self.order.attension = value
-        item = self.data[self.table.attension]
         
+        item = self.data[self.table.attension]
         item.setIcon(self.table.attensionIcon[value])
         
     def setAlarm(self, value):
@@ -242,7 +245,6 @@ class trayMassanger(object):
         super(trayMassanger, self).__init__()
         
         self.scaning = 0
-        self.icon = QtGui.QIcon('images/icon.PNG')
         self.iconScaning = QtGui.QMovie("images/iconScaning.GIF")
         self.iconScaning.frameChanged.connect(self.iconUpdate)
         
@@ -253,7 +255,11 @@ class trayMassanger(object):
             # tray settings
         self.tray = QtGui.QSystemTrayIcon()
         
-        self.tray.setIcon(self.icon)
+        self.iconScaning.jumpToFrame(0)
+        icon = QtGui.QIcon()
+        icon.addPixmap(self.iconScaning.currentPixmap())
+        self.tray.setIcon(icon)        
+        
         self.tray.show()
         
         print(self.iconScaning.isValid())
@@ -266,22 +272,23 @@ class trayMassanger(object):
         if self.scaning:
             self.iconScaning.start()
             self.iconScaning.jumpToFrame(0)
-            icon = QtGui.QIcon()
-            icon.addPixmap(self.iconScaning.currentPixmap())
-            self.tray.setIcon(icon)
         else:
             self.iconScaning.stop()
-            self.tray.setIcon(self.icon)
+            self.iconScaning.jumpToFrame(0)
+            
+        icon = QtGui.QIcon()
+        icon.addPixmap(self.iconScaning.currentPixmap())
+        self.tray.setIcon(icon)
         
     def iconUpdate(self):
         
-        if self.scaning:
-            icon = QtGui.QIcon()
-            icon.addPixmap(self.iconScaning.currentPixmap())
-            self.tray.setIcon(icon)
-        else:
+        if not self.scaning:
             self.iconScaning.stop()
-            self.tray.setIcon(self.icon)
+            self.iconScaning.jumpToFrame(0)
+            
+        icon = QtGui.QIcon()
+        icon.addPixmap(self.iconScaning.currentPixmap())
+        self.tray.setIcon(icon)
         
     def showMessage_fromOrders(self, ordersAlarm):
 
@@ -343,8 +350,13 @@ class trayMassanger(object):
         
     def showMessage(self, title, message): 
         
-        print('Show tray message')
+        print('Show tray message: ', 
+              time.strftime("%H:%M:%S", time.localtime()),
+              end = ' ')
+        
         self.tray.showMessage(title,message)
+        
+        print('ok')
 
 #==============================================================================
 #     WINDOW
@@ -1026,6 +1038,17 @@ class OrderScaner(QtGui.QMainWindow):
             # debug
         print('Load settings')
         
+            # get dir
+        workDir = os.getcwd()
+        workDir = workDir.replace('\\','/')
+        
+            # get files in dir
+        files = os.listdir(workDir)
+        
+            # if config is not found
+        if 'config.ini' not in files:
+            self.settings_createINI()        
+        
             # read config
         config = configparser.ConfigParser()
         config.read('config.ini')
@@ -1077,6 +1100,37 @@ class OrderScaner(QtGui.QMainWindow):
         self.tableOrders_setColumns(self.Table_OrdersBuy)
         self.tableOrders_updateItems(self.Table_OrdersBuy)
         
+    def settings_createINI(self):
+        
+            # create empty config
+        open('config.ini','w').close()
+        
+            # read new file
+        config = configparser.ConfigParser()
+        config.read('config.ini')
+        
+            # clear it
+        config.clear()
+        
+            # add MAIN default settings
+        config.add_section('MAIN')
+        config.set('MAIN','marketlogs','')
+        config.set('MAIN','alarmenable','1')
+        config.set('MAIN','alarmtime','30000')
+        config.set('MAIN','alarmwithsound','1')
+        config.set('MAIN','loopscan','1')
+        config.set('MAIN','tablesettings','0,1,2,3,4,5,6,7,8,9,10,11')
+        
+            # add KEYS default settings
+        config.add_section('KEYS')
+        config.set('KEYS','name','')
+        config.set('KEYS','key','')
+        config.set('KEYS','vc','')
+        
+            # save config
+        with open('config.ini', 'w') as configfile:
+            config.write(configfile)
+        
 if __name__ == '__main__':
     
     app = QtGui.QApplication(sys.argv)
@@ -1084,7 +1138,7 @@ if __name__ == '__main__':
     window = OrderScaner()
 
     app.setActiveWindow(window)
-    app.setWindowIcon(QtGui.QIcon('images/icon.PNG'))
+    app.setWindowIcon(QtGui.QIcon('images/iconScaning.GIF'))
     
     sys.exit(app.exec_())
 
