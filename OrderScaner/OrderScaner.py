@@ -267,7 +267,6 @@ class trayMassanger(object):
     def setScaning(self, scaning):
         
         self.scaning = scaning
-
         
         if self.scaning:
             self.iconScaning.start()

@@ -59,7 +59,7 @@ def order_updateOrder(order, myOrders):
             if read_OrderID == order.id:
                     
                     # found
-                order.exist = 1            
+                order.exist = 1
             
                     # update count (crest may lags and count may became bigger)
                 if read_Remaining < order.remaining:
@@ -126,7 +126,7 @@ def item_Load(itemID, bid, region):
     else:
         orderType = 'sell'
     
-    url = "https://public-crest.eveonline.com/market/"+str(region)+"/orders/"+orderType+"/?type=https://public-crest.eveonline.com/types/"+str(itemID)+"/"
+    url = "https://crest-tq.eveonline.com/market/"+str(region)+"/orders/"+orderType+"/?type=https://public-crest.eveonline.com/types/"+str(itemID)+"/"
     
     data_file = request.urlopen(url).read().decode('utf-8')
     #request.urlretrieve(url, "D:/result.json")
